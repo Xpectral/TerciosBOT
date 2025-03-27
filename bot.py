@@ -57,7 +57,7 @@ async def start_command(client, message):
     await message.reply(welcome_msg, parse_mode=enums.ParseMode.MARKDOWN)
 
 # Comando /help
-@app.on_message(filters.command("help") & (filters.private | filters.group))
+@app.on_message(filters.command("help") & (filters.private | filters.channel))
 async def help_command(client, message):
     help_msg = (
         "**Comandos disponibles:**\n\n"
@@ -70,7 +70,7 @@ async def help_command(client, message):
     await message.reply(help_msg, parse_mode=enums.ParseMode.MARKDOWN)
 
 # Comando /status
-@app.on_message(filters.command("status") & (filters.private | filters.group))
+@app.on_message(filters.command("status") & (filters.private | filters.channel))
 async def status_command(client, message):
     try:
         silenced_topics = load_silenced_topics()
@@ -86,7 +86,7 @@ async def status_command(client, message):
         await message.reply("❌ Error al obtener el estado del bot")
 
 # Comando /silenciar
-@app.on_message(filters.command("silenciar") & filters.group)
+@app.on_message(filters.command("silenciar") & filters.channel)
 async def toggle_silence(client, message):
     try:
         if not hasattr(message, 'message_thread_id') or not message.message_thread_id:
@@ -116,7 +116,7 @@ async def toggle_silence(client, message):
         await notify_admin(f"❌ Error en /silenciar:\n{str(e)}")
 
 # Comando /silenciados
-@app.on_message(filters.command("silenciados") & filters.group)
+@app.on_message(filters.command("silenciados") & filters.channel)
 async def list_silenced(client, message):
     try:
         silenced_topics = load_silenced_topics()
@@ -132,7 +132,7 @@ async def list_silenced(client, message):
         await notify_admin(f"❌ Error en /silenciados:\n{str(e)}")
 
 # Autoeliminación de mensajes en temas silenciados
-@app.on_message(filters.group & ~filters.text)
+@app.on_message(filters.channel & ~filters.command(["start", "status", "help", "silenciar", "silenciados"]))
 async def auto_delete(client, message):
     try:
         if not hasattr(message, 'message_thread_id') or not message.message_thread_id or message.message_thread_id not in load_silenced_topics():
