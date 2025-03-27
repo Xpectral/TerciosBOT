@@ -101,14 +101,18 @@ async def set_silenced_topics(client, message: Message):
 async def status_command(client, message: Message):
     try:
         from datetime import datetime
-        info = [
-            "✨ *Estado del bot HηTercios* ✨",
-            f"📂 Subtemas silenciados: `{len(silenced_topics)}`",
-            f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`",
-            "🧪 Versión: `1.0.0`",
+        info = (
+            "✨ *Estado del bot HηTercios* ✨
+"
+            f"📂 Subtemas silenciados: `{len(silenced_topics)}`
+"
+            f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`
+"
+            "🧪 Versión: `1.0.0`
+"
             "🌌 Cosmos activo y fluyendo 🛡️"
-        ]
-        await message.reply("
+        )
+        await message.reply(info, parse_mode="markdown")"
 ".join(info), parse_mode="markdown")
     except Exception as e:
         await notify_admin_error("/status", e)
