@@ -2,7 +2,7 @@ import json
 import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.idle import idle
+from pyrogram import idle
 import os
 
 # Configura tus credenciales desde variables de entorno
@@ -95,6 +95,43 @@ async def set_silenced_topics(client, message: Message):
             await message.reply("🔇 Este subtema ha sido silenciado. Solo administradores pueden escribir.\n🛡️ Protegido por los Caballeros del Silencio.")
     except Exception as e:
         await notify_admin_error("/silenciar", e)
+
+# Comando /status
+@app.on_message(filters.command("status") & (filters.private | filters.group))
+async def status_command(client, message: Message):
+    try:
+        from datetime import datetime
+        info = [
+            "✨ *Estado del bot HηTercios* ✨",
+            f"📂 Subtemas silenciados: `{len(silenced_topics)}`",
+            f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`",
+            "🧪 Versión: `1.0.0`",
+            "🌌 Cosmos activo y fluyendo 🛡️"
+        ]
+        await message.reply("
+".join(info), parse_mode="markdown")
+    except Exception as e:
+        await notify_admin_error("/status", e)
+
+# Comando /help
+@app.on_message(filters.command("help") & (filters.private | filters.group))
+async def help_command(client, message: Message):
+    try:
+        help_text = (
+            "📖 *Comandos del Caballero HηTercios:*
+
+"
+            "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)
+"
+            "🔹 `/silenciados` — Lista los subtemas actualmente silenciados
+"
+            "🔹 `/status` — Muestra el estado del cosmos y del bot
+"
+            "🔹 `/help` — Muestra esta ayuda celestial"
+        )
+        await message.reply(help_text, parse_mode="markdown")
+    except Exception as e:
+        await notify_admin_error("/help", e)
 
 # Comando /silenciados
 @app.on_message(filters.command("silenciados") & filters.group)
