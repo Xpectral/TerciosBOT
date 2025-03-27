@@ -175,22 +175,19 @@ async def auto_delete(client, message: Message):
 
 # Arranque seguro con notificación
 async def main():
-    await app.start()
-    print("Bot arrancado. Notificando al admin...")
-    if ADMIN_USER_ID:
-        try:
-            await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
-        except Exception as e:
-            print(f"[ERROR] No se pudo notificar al admin: {e}")
-    await app.idle()
-
-if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        await app.start()
+        print("Bot arrancado. Notificando al admin...")
+        if ADMIN_USER_ID:
+            await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
+        await app.idle()
     except Exception as e:
         print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
         if ADMIN_USER_ID:
             try:
-                asyncio.run(app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:\n{e}"))
+                await app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:\n{e}")
             except Exception as ex:
                 print(f"[ERROR] No se pudo notificar al admin sobre el fallo: {ex}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
