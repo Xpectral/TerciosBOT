@@ -63,7 +63,7 @@ async def help_command(client, message):
         "**Comandos disponibles:**\n\n"
         "/start - Inicia la conversación con el bot.\n"
         "/status - Muestra el estado del bot.\n"
-        "/silenciar - Silencia un subtema (solo dentro de temas de foro).\n"
+        "/silenciar - Silencia un subtema (solo dentro de temas).\n"
         "/silenciados - Lista los subtemas silenciados.\n"
         "/help - Muestra este mensaje de ayuda.\n"
     )
@@ -89,17 +89,20 @@ async def status_command(client, message):
 @app.on_message(filters.command("silenciar") & filters.channel)
 async def toggle_silence(client, message):
     try:
+        # Verificar si el mensaje pertenece a un tema
         if not hasattr(message, 'message_thread_id') or not message.message_thread_id:
-            await message.reply("⚠️ Este comando solo funciona en temas de foro.")
+            await message.reply("⚠️ Este comando solo funciona en temas.")
             return
         
         user_id = message.from_user.id
         chat_member = await app.get_chat_member(message.chat.id, user_id)
         
+        # Verificar si el usuario es administrador
         if chat_member.status not in ["administrator", "creator"]:
             await message.reply("⚠️ Solo administradores pueden usar este comando.")
             return
         
+        # Alternar estado del tema
         silenced_topics = load_silenced_topics()
         topic_id = message.message_thread_id
         
