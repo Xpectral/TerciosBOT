@@ -62,13 +62,14 @@ async def notify_admin_error(context: str, error: Exception):
     if ADMIN_USER_ID:
         try:
             await app.send_message(ADMIN_USER_ID, f"❌ Error en {context}:\n{str(error)}")
-        except:
-            pass
+        except Exception as e:
+            print(f"[ERROR] No se pudo enviar el mensaje al admin: {e}")
 
 # Comando /silenciar
 @app.on_message(filters.command("silenciar") & filters.group)
 async def set_silenced_topics(client, message: Message):
     try:
+        print("Comando /silenciar recibido en el grupo")  # Log
         if not message.from_user:
             return
 
@@ -95,12 +96,14 @@ async def set_silenced_topics(client, message: Message):
             save_silenced_topics()
             await message.reply("🔇 Este subtema ha sido silenciado. Solo administradores pueden escribir.\n🛡️ Protegido por los Caballeros del Silencio.")
     except Exception as e:
+        print(f"[ERROR] Error en /silenciar: {e}")  # Log de error
         await notify_admin_error("/silenciar", e)
 
 # Comando /status
 @app.on_message(filters.command("status") & (filters.private | filters.group))
 async def status_command(client, message: Message):
     try:
+        print("Comando /status recibido")  # Log
         from datetime import datetime
         info = (
             "✨ *Estado del bot HηTercios* ✨\n"
@@ -111,12 +114,14 @@ async def status_command(client, message: Message):
         )
         await message.reply(info, parse_mode="markdown")
     except Exception as e:
+        print(f"[ERROR] Error en /status: {e}")  # Log de error
         await notify_admin_error("/status", e)
 
 # Comando /help
 @app.on_message(filters.command("help") & (filters.private | filters.group))
 async def help_command(client, message: Message):
     try:
+        print("Comando /help recibido")  # Log
         help_text = (
             "📖 *Comandos del Caballero HηTercios:*\\n\\n"
             "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)\\n"
@@ -126,12 +131,14 @@ async def help_command(client, message: Message):
         )
         await message.reply(help_text, parse_mode="markdown")
     except Exception as e:
+        print(f"[ERROR] Error en /help: {e}")  # Log de error
         await notify_admin_error("/help", e)
 
 # Comando /silenciados
 @app.on_message(filters.command("silenciados") & filters.group)
 async def list_silenced_topics(client, message: Message):
     try:
+        print("Comando /silenciados recibido")  # Log
         if not silenced_topics:
             await message.reply("📭 No hay subtemas silenciados actualmente.")
             return
@@ -146,6 +153,7 @@ async def list_silenced_topics(client, message: Message):
 
         await message.reply("\n".join(lines))
     except Exception as e:
+        print(f"[ERROR] Error en /silenciados: {e}")  # Log de error
         await notify_admin_error("/silenciados", e)
 
 # Autoeliminación en subtemas silenciados
@@ -181,6 +189,7 @@ async def auto_delete(client, message: Message):
             await asyncio.sleep(10)
             await msg.delete()
     except Exception as e:
+        print(f"[ERROR] Error en auto_delete: {e}")  # Log de error
         await notify_admin_error("auto_delete", e)
 
 # Arranque seguro con notificación
