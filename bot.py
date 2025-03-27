@@ -17,31 +17,28 @@ app = Client("hntercios_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TO
 PERSISTENCE_FILE = "silenced_topics.json"
 
 # Cargar temas silenciados desde archivo
-try:
-    if os.path.exists(PERSISTENCE_FILE):
-        with open(PERSISTENCE_FILE, "r") as f:
-            data = f.read().strip()
-            if data:
-                silenced_topics = set(json.loads(data))
-            else:
-                silenced_topics = set()
-    else:
-        silenced_topics = set()
+def load_silenced_topics():
+    try:
+        if os.path.exists(PERSISTENCE_FILE):
+            with open(PERSISTENCE_FILE, "r") as f:
+                data = f.read().strip()
+                if data:
+                    return set(json.loads(data))
+                else:
+                    return set()
+        else:
+            return set()
+    except Exception as e:
+        print(f"[ERROR] No se pudo cargar silenced_topics.json: {e}")
+        return set()
+
+# Guardar temas silenciados en el archivo
+def save_silenced_topics(silenced_topics):
+    try:
         with open(PERSISTENCE_FILE, "w") as f:
-            json.dump([], f)
-except Exception as e:
-    print(f"[ERROR] No se pudo cargar silenced_topics.json: {e}")
-    silenced_topics = set()
-    with open(PERSISTENCE_FILE, "w") as f:
-        json.dump([], f)
-
-# Diccionario para evitar spam del mensaje de advertencia
-warning_messages = {}
-
-# Función para guardar los temas silenciados
-def save_silenced_topics():
-    with open(PERSISTENCE_FILE, "w") as f:
-        json.dump(list(silenced_topics), f)
+            json.dump(list(silenced_topics), f)
+    except Exception as e:
+        print(f"[ERROR] No se pudo guardar silenced_topics.json: {e}")
 
 # Verifica si un usuario es administrador
 def is_admin(user_id, chat_member):
@@ -55,17 +52,18 @@ async def notify_admin_on_start():
         except Exception as e:
             print(f"[ERROR] No se pudo notificar al admin: {e}")
 
-# Función para notificar errores en ejecución
+# Función para notificar errores
 async def notify_admin_error(context: str, error: Exception):
     if ADMIN_USER_ID:
         try:
             await app.send_message(ADMIN_USER_ID, f"❌ Error en {context}:\n{str(error)}")
-        except:
-            pass
+        except Exception as e:
+            print(f"[ERROR] No se pudo notificar al admin sobre el fallo: {e}")
 
 # Comando /silenciar
 @app.on_message(filters.command("silenciar") & filters.group)
 async def set_silenced_topics(client, message: Message):
+    silenced_topics = load_silenced_topics()
     try:
         if not message.from_user:
             return
@@ -86,11 +84,11 @@ async def set_silenced_topics(client, message: Message):
 
         if topic_id in silenced_topics:
             silenced_topics.remove(topic_id)
-            save_silenced_topics()
+            save_silenced_topics(silenced_topics)
             await message.reply("✅ Este subtema ya no está silenciado. Todos pueden escribir.\n🌟 El cosmos fluye libremente.")
         else:
             silenced_topics.add(topic_id)
-            save_silenced_topics()
+            save_silenced_topics(silenced_topics)
             await message.reply("🔇 Este subtema ha sido silenciado. Solo administradores pueden escribir.\n🛡️ Protegido por los Caballeros del Silencio.")
     except Exception as e:
         await notify_admin_error("/silenciar", e)
@@ -99,6 +97,7 @@ async def set_silenced_topics(client, message: Message):
 @app.on_message(filters.command("status") & (filters.private | filters.group))
 async def status_command(client, message: Message):
     try:
+        silenced_topics = load_silenced_topics()
         info = (
             "✨ *Estado del bot HηTercios* ✨\n"
             f"📂 Subtemas silenciados: `{len(silenced_topics)}`\n"
@@ -128,6 +127,7 @@ async def help_command(client, message: Message):
 # Comando /silenciados
 @app.on_message(filters.command("silenciados") & filters.group)
 async def list_silenced_topics(client, message: Message):
+    silenced_topics = load_silenced_topics()
     try:
         if not silenced_topics:
             await message.reply("📭 No hay subtemas silenciados actualmente.")
@@ -148,6 +148,7 @@ async def list_silenced_topics(client, message: Message):
 # Autoeliminación en subtemas silenciados
 @app.on_message(filters.group & filters.text)
 async def auto_delete(client, message: Message):
+    silenced_topics = load_silenced_topics()
     try:
         if not message.message_thread_id:
             return
@@ -182,16 +183,16 @@ async def auto_delete(client, message: Message):
 
 # Arranque seguro con notificación
 async def main():
-    await notify_admin_on_start()
-    await app.run()  # Usamos app.run() en vez de idle()
-
-if __name__ == "__main__":
     try:
-        main()  # Ejecutamos directamente el main()
+        await notify_admin_on_start()
+        await app.run()  # Usamos app.run() para iniciar el bot de forma segura
     except Exception as e:
         print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
         if ADMIN_USER_ID:
             try:
-                asyncio.run(app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:\n{e}"))
+                await app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:\n{e}")
             except:
                 pass
+
+if __name__ == "__main__":
+    main()  # Ejecutamos directamente el main()
