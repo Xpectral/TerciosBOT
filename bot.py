@@ -1,7 +1,8 @@
 import json
 import asyncio
 from pyrogram import Client, filters
-from pyrogram.types import Message
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram import idle
 import os
 
 # Configura tus credenciales desde variables de entorno
@@ -47,13 +48,22 @@ def save_silenced_topics():
 def is_admin(user_id, chat_member):
     return chat_member.status in ("administrator", "creator")
 
-# Comando /start
-@app.on_message(filters.command("start") & filters.private)
-async def start(client, message: Message):
-    try:
-        await message.reply("¡Hola! Soy tu bot de HηTercios. ¿En qué puedo ayudarte? 🌟")
-    except Exception as e:
-        print(f"[ERROR] Al procesar el comando /start: {e}")
+# Notificar al admin al arrancar
+async def notify_admin_on_start():
+    if ADMIN_USER_ID:
+        try:
+            await app.start()
+            await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
+        except Exception as e:
+            print(f"[ERROR] No se pudo notificar al admin: {e}")
+
+# Función para notificar errores en ejecución
+async def notify_admin_error(context: str, error: Exception):
+    if ADMIN_USER_ID:
+        try:
+            await app.send_message(ADMIN_USER_ID, f"❌ Error en {context}:\n{str(error)}")
+        except:
+            pass
 
 # Comando /silenciar
 @app.on_message(filters.command("silenciar") & filters.group)
@@ -85,7 +95,7 @@ async def set_silenced_topics(client, message: Message):
             save_silenced_topics()
             await message.reply("🔇 Este subtema ha sido silenciado. Solo administradores pueden escribir.\n🛡️ Protegido por los Caballeros del Silencio.")
     except Exception as e:
-        print(f"[ERROR] Error al ejecutar /silenciar: {e}")
+        await notify_admin_error("/silenciar", e)
 
 # Comando /status
 @app.on_message(filters.command("status") & (filters.private | filters.group))
@@ -93,30 +103,30 @@ async def status_command(client, message: Message):
     try:
         from datetime import datetime
         info = (
-    "✨ *Estado del bot HηTercios* ✨\n"
-    f"📂 Subtemas silenciados: `{len(silenced_topics)}`\n"
-    f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`\n"
-    "🧪 Versión: `1.0.0`\n"
-    "🌌 Cosmos activo y fluyendo 🛡️"
-)
+            "✨ *Estado del bot HηTercios* ✨\n"
+            f"📂 Subtemas silenciados: `{len(silenced_topics)}`\n"
+            f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`\n"
+            "🧪 Versión: `1.0.0`\n"
+            "🌌 Cosmos activo y fluyendo 🛡️"
+        )
         await message.reply(info, parse_mode="markdown")
     except Exception as e:
-        print(f"[ERROR] Error al ejecutar /status: {e}")
+        await notify_admin_error("/status", e)
 
 # Comando /help
 @app.on_message(filters.command("help") & (filters.private | filters.group))
 async def help_command(client, message: Message):
     try:
         help_text = (
-    "📖 *Comandos del Caballero HηTercios:*\n"
-    "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)\n"
-    "🔹 `/silenciados` — Lista los subtemas actualmente silenciados\n"
-    "🔹 `/status` — Muestra el estado del cosmos y del bot\n"
-    "🔹 `/help` — Muestra esta ayuda celestial"
-)
+            "📖 *Comandos del Caballero HηTercios:*\n"
+            "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)\n"
+            "🔹 `/silenciados` — Lista los subtemas actualmente silenciados\n"
+            "🔹 `/status` — Muestra el estado del cosmos y del bot\n"
+            "🔹 `/help` — Muestra esta ayuda celestial"
+        )
         await message.reply(help_text, parse_mode="markdown")
     except Exception as e:
-        print(f"[ERROR] Error al ejecutar /help: {e}")
+        await notify_admin_error("/help", e)
 
 # Comando /silenciados
 @app.on_message(filters.command("silenciados") & filters.group)
@@ -136,7 +146,7 @@ async def list_silenced_topics(client, message: Message):
 
         await message.reply("\n".join(lines))
     except Exception as e:
-        print(f"[ERROR] Error al ejecutar /silenciados: {e}")
+        await notify_admin_error("/silenciados", e)
 
 # Autoeliminación en subtemas silenciados
 @app.on_message(filters.group & filters.text)
@@ -171,23 +181,20 @@ async def auto_delete(client, message: Message):
             await asyncio.sleep(10)
             await msg.delete()
     except Exception as e:
-        print(f"[ERROR] Error al ejecutar auto_delete: {e}")
+        await notify_admin_error("auto_delete", e)
 
 # Arranque seguro con notificación
 async def main():
+    await notify_admin_on_start()
+    await app.idle()  # Cambié idle() por app.idle()
+
+if __name__ == "__main__":
     try:
-        await app.start()
-        print("Bot arrancado. Notificando al admin...")
-        if ADMIN_USER_ID:
-            await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
-        await app.run()
+        main()  # Cambié asyncio.run() por la llamada directa a main()
     except Exception as e:
         print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
         if ADMIN_USER_ID:
             try:
-                await app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:\n{e}")
-            except Exception as ex:
-                print(f"[ERROR] No se pudo notificar al admin sobre el fallo: {ex}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+                app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:\n{e}")
+            except:
+                pass
