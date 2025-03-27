@@ -1,7 +1,7 @@
 import json
 import os
-from datetime import datetime, timezone
-from pyrogram import Client, filters, enums
+from datetime import datetime
+from pyrogram import Client, filters
 from pyrogram.types import ChatPermissions
 
 # Configuración desde variables de entorno
@@ -56,7 +56,7 @@ async def start_command(client, message):
         "⚙️ Usa /help para ver los comandos disponibles\n"
         "🌌 El cosmos está en equilibrio"
     )
-    await message.reply(welcome_msg, parse_mode=enums.ParseMode.MARKDOWN)
+    await message.reply(welcome_msg, parse_mode="markdown")
 
 # Comando /help
 @app.on_message(filters.command("help") & filters.group)
@@ -70,7 +70,7 @@ async def help_command(client, message):
         "/silenciados - Lista los subtemas silenciados.\n"
         "/help - Muestra este mensaje de ayuda.\n"
     )
-    await message.reply(help_msg, parse_mode=enums.ParseMode.MARKDOWN)
+    await message.reply(help_msg, parse_mode="markdown")
 
 # Comando /status
 @app.on_message(filters.command("status") & filters.group)
@@ -81,10 +81,10 @@ async def status_command(client, message):
         info = (
             "✨ *Estado del bot HηTercios* ✨\n"
             f"📂 Subtemas silenciados: `{len(silenced_topics)}`\n"
-            f"🕒 Última actividad: `{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC`\n"
+            f"🕒 Última actividad: `{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} UTC`\n"
             "🌌 Cosmos activo y fluyendo 🛡️"
         )
-        await message.reply(info, parse_mode=enums.ParseMode.MARKDOWN)
+        await message.reply(info, parse_mode="markdown")
     except Exception as e:
         print(f"[ERROR] Error en /status: {e}")
         await message.reply("❌ Error al obtener el estado del bot")
@@ -134,7 +134,7 @@ async def list_silenced(client, message):
             return
         
         topics_list = "\n".join([f"- Subtema ID: `{topic}`" for topic in silenced_topics])
-        await message.reply(f"📂 *Subtemas silenciados:*\n{topics_list}", parse_mode=enums.ParseMode.MARKDOWN)
+        await message.reply(f"📂 *Subtemas silenciados:*\n{topics_list}", parse_mode="markdown")
 
 # Monitoreo de mensajes en subtemas silenciados
 @app.on_message(filters.group & filters.text)
