@@ -47,8 +47,9 @@ async def notify_admin(message):
             print(f"[ERROR] No se pudo notificar al admin: {e}")
 
 # Comando /start
-@app.on_message(filters.command("start") & filters.private)
+@app.on_message(filters.command("start") & filters.group)
 async def start_command(client, message):
+    print("[INFO] Comando /start recibido")
     welcome_msg = (
         "🤖 **Bienvenido al Caballero HηTercios**\n"
         "Guardían de los subtemas del foro\n\n"
@@ -58,8 +59,9 @@ async def start_command(client, message):
     await message.reply(welcome_msg, parse_mode=enums.ParseMode.MARKDOWN)
 
 # Comando /help
-@app.on_message(filters.command("help") & (filters.private | filters.channel))
+@app.on_message(filters.command("help") & filters.group)
 async def help_command(client, message):
+    print("[INFO] Comando /help recibido")
     help_msg = (
         "**Comandos disponibles:**\n\n"
         "/start - Inicia la conversación con el bot.\n"
@@ -71,8 +73,9 @@ async def help_command(client, message):
     await message.reply(help_msg, parse_mode=enums.ParseMode.MARKDOWN)
 
 # Comando /status
-@app.on_message(filters.command("status") & (filters.private | filters.channel))
+@app.on_message(filters.command("status") & filters.group)
 async def status_command(client, message):
+    print("[INFO] Comando /status recibido")
     try:
         silenced_topics = load_silenced_topics()
         info = (
@@ -87,8 +90,9 @@ async def status_command(client, message):
         await message.reply("❌ Error al obtener el estado del bot")
 
 # Comando /silenciar
-@app.on_message(filters.command("silenciar") & filters.channel)
+@app.on_message(filters.command("silenciar") & filters.group)
 async def toggle_silence(client, message):
+    print("[INFO] Comando /silenciar recibido")
     try:
         # Verificar si el mensaje pertenece a un tema
         if not hasattr(message, 'message_thread_id') or not message.message_thread_id:
@@ -110,30 +114,18 @@ async def toggle_silence(client, message):
         if topic_id in silenced_topics:
             silenced_topics.remove(topic_id)
             save_silenced_topics(silenced_topics)
-            # Restaurar permisos para todos los usuarios
-            await app.set_chat_permissions(
-                chat_id=message.chat.id,
-                permissions=ChatPermissions(can_send_messages=True),
-                message_thread_id=topic_id,
-            )
             await message.reply("✅ Este subtema ya no está silenciado. Todos pueden escribir.")
         else:
             silenced_topics.add(topic_id)
             save_silenced_topics(silenced_topics)
-            # Restringir permisos para usuarios no administradores
-            await app.set_chat_permissions(
-                chat_id=message.chat.id,
-                permissions=ChatPermissions(can_send_messages=False),
-                message_thread_id=topic_id,
-            )
             await message.reply("🔇 Este subtema ha sido silenciado. Solo administradores pueden escribir.")
     except Exception as e:
         print(f"[ERROR] Error en /silenciar: {e}")
-        await notify_admin(f"❌ Error en /silenciar:\n{str(e)}")
 
 # Comando /silenciados
-@app.on_message(filters.command("silenciados") & filters.channel)
+@app.on_message(filters.command("silenciados") & filters.group)
 async def list_silenced(client, message):
+    print("[INFO] Comando /silenciados recibido")
     try:
         silenced_topics = load_silenced_topics()
         
@@ -145,13 +137,4 @@ async def list_silenced(client, message):
         await message.reply(f"📂 *Subtemas silenciados:*\n{topics_list}", parse_mode=enums.ParseMode.MARKDOWN)
     except Exception as e:
         print(f"[ERROR] Error en /silenciados: {e}")
-        await notify_admin(f"❌ Error en /silenciados:\n{str(e)}")
 
-# Ejecución del bot
-if __name__ == "__main__":
-    try:
-        print("[INFO] Iniciando bot HηTercios...")
-        
-        app.run()  # Inicia el cliente y maneja el ciclo de eventos automáticamente.
-    except Exception as e:
-        print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
