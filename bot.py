@@ -1,7 +1,7 @@
 import json
 import asyncio
 from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import Message
 from pyrogram import idle
 import os
 
@@ -53,11 +53,6 @@ async def notify_admin_on_start():
     if ADMIN_USER_ID:
         try:
             await app.start()
-            await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
-        except Exception as e:
-            print(f"[ERROR] No se pudo notificar al admin: {e}")
-    if ADMIN_USER_ID:
-        try:
             await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
         except Exception as e:
             print(f"[ERROR] No se pudo notificar al admin: {e}")
@@ -132,7 +127,6 @@ async def help_command(client, message: Message):
         await message.reply(help_text, parse_mode="markdown")
     except Exception as e:
         await notify_admin_error("/help", e)
-
 
 # Comando /silenciados
 @app.on_message(filters.command("silenciados") & filters.group)
