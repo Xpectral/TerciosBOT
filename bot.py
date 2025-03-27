@@ -3,6 +3,7 @@ import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import Message
 import os
+from datetime import datetime
 
 # Configura tus credenciales desde variables de entorno
 API_ID = int(os.environ["API_ID"])
@@ -64,15 +65,6 @@ async def notify_admin_error(context: str, error: Exception):
         except:
             pass
 
-# Comando /start
-@app.on_message(filters.command("start") & filters.private)
-async def start(client, message: Message):
-    try:
-        await message.reply("¡Hola! Soy tu bot de HηTercios. ¿En qué puedo ayudarte? 🌟")
-    except Exception as e:
-        print(f"[ERROR] Error al responder al comando /start: {e}")
-        await message.reply("Hubo un error al procesar tu comando. 🙁")
-
 # Comando /silenciar
 @app.on_message(filters.command("silenciar") & filters.group)
 async def set_silenced_topics(client, message: Message):
@@ -126,7 +118,7 @@ async def status_command(client, message: Message):
 async def help_command(client, message: Message):
     try:
         help_text = (
-            "📖 *Comandos del Caballero HηTercios:*\n"
+            "📖 *Comandos del Caballero HηTercios:*\n\n"
             "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)\n"
             "🔹 `/silenciados` — Lista los subtemas actualmente silenciados\n"
             "🔹 `/status` — Muestra el estado del cosmos y del bot\n"
@@ -194,11 +186,12 @@ async def auto_delete(client, message: Message):
 # Arranque seguro con notificación
 async def main():
     await notify_admin_on_start()
-    await app.run()
+    await app.start()
+    await app.idle()
 
 if __name__ == "__main__":
     try:
-        app.run()  # Inicia el bot
+        asyncio.run(main())
     except Exception as e:
         print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
         if ADMIN_USER_ID:
