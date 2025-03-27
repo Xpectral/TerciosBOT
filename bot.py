@@ -111,7 +111,7 @@ async def main():
         print("Bot en funcionamiento")
         
         # Mantener el bot activo escuchando eventos
-        idle()
+        idle()  # Corrección: llamada directa a pyrogram.idle()
         
     except Exception as e:
         print(f"Error crítico: {e}")
