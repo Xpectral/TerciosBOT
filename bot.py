@@ -3,6 +3,7 @@ import os
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from datetime import datetime
+import asyncio
 
 # Configura tus credenciales desde variables de entorno
 API_ID = int(os.environ["API_ID"])
@@ -181,18 +182,16 @@ async def auto_delete(client, message: Message):
     except Exception as e:
         await notify_admin_error("auto_delete", e)
 
-# Arranque seguro con notificación
-async def main():
+# Main loop sin asyncio.run()
+if __name__ == "__main__":
     try:
-        await notify_admin_on_start()
-        await app.run()  # Usamos app.run() para iniciar el bot de forma segura
+        app.start()  # Usamos app.start() para iniciar el bot y manejar el ciclo de eventos
+        print("Bot arrancado correctamente")
+        app.idle()  # Aseguramos que el bot permanezca ejecutándose
     except Exception as e:
         print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
         if ADMIN_USER_ID:
             try:
-                await app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:\n{e}")
+                app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:\n{e}")
             except:
                 pass
-
-if __name__ == "__main__":
-    main()  # Ejecutamos directamente el main()
