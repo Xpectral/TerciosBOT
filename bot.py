@@ -4,25 +4,44 @@ from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 import os
 
-# Configura tus credenciales
-import os
-
+# Configura tus credenciales desde variables de entorno
 API_ID = int(os.environ["API_ID"])
 API_HASH = os.environ["API_HASH"]
-BOT_TOKEN = os.environ["BOT_TOKEN"]
-
+BOT_TOKEN = os.environ["BOT_TOKEN"]"1234567890:ABCDefghIJKLMNOP-YourBotTokenHere"  # Sustituye por tu token
 
 # Ruta del archivo de persistencia
 PERSISTENCE_FILE = "silenced_topics.json"
 
 # Cargar temas silenciados desde archivo
-if os.path.exists(PERSISTENCE_FILE):
-    with open(PERSISTENCE_FILE, "r") as f:
-        silenced_topics = set(json.load(f))
-else:
+try:
+    if os.path.exists(PERSISTENCE_FILE):
+        with open(PERSISTENCE_FILE, "r") as f:
+            data = f.read().strip()
+            if data:
+                silenced_topics = set(json.loads(data))
+            else:
+                silenced_topics = set()
+    else:
+        silenced_topics = set()
+        with open(PERSISTENCE_FILE, "w") as f:
+            json.dump([], f)
+except Exception as e:
+    print(f"[ERROR] No se pudo cargar silenced_topics.json: {e}")
     silenced_topics = set()
+    with open(PERSISTENCE_FILE, "w") as f:
+        json.dump([], f)
 
 app = Client("hntercios_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+
+# ID del administrador principal para enviar notificaciones
+ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID", 0))
+
+async def notify_admin_on_start():
+    if ADMIN_USER_ID:
+        try:
+            await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
+        except Exception as e:
+            print(f"[ERROR] No se pudo notificar al admin: {e}")
 
 # Diccionario para evitar spam del mensaje de advertencia
 warning_messages = {}
@@ -186,4 +205,19 @@ async def auto_delete(client, message: Message):
         await msg.delete()
 
 
-app.run()
+async def main():
+    await notify_admin_on_start()
+    await app.start()
+    await idle()
+
+from pyrogram.idle import idle
+
+if __name__ == "__main__":
+    import asyncio
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
+        if ADMIN_USER_ID:
+            asyncio.run(app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:
+{e}"))
