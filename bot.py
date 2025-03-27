@@ -62,14 +62,14 @@ async def notify_admin_error(context: str, error: Exception):
     if ADMIN_USER_ID:
         try:
             await app.send_message(ADMIN_USER_ID, f"❌ Error en {context}:\n{str(error)}")
-        except Exception as e:
-            print(f"[ERROR] No se pudo enviar el mensaje al admin: {e}")
+        except:
+            pass
 
 # Comando /silenciar
 @app.on_message(filters.command("silenciar") & filters.group)
 async def set_silenced_topics(client, message: Message):
+    print("Comando /silenciar recibido en el grupo")  # Log
     try:
-        print("Comando /silenciar recibido en el grupo")  # Log
         if not message.from_user:
             return
 
@@ -102,8 +102,8 @@ async def set_silenced_topics(client, message: Message):
 # Comando /status
 @app.on_message(filters.command("status") & (filters.private | filters.group))
 async def status_command(client, message: Message):
+    print("Comando /status recibido")  # Log
     try:
-        print("Comando /status recibido")  # Log
         from datetime import datetime
         info = (
             "✨ *Estado del bot HηTercios* ✨\n"
@@ -120,8 +120,8 @@ async def status_command(client, message: Message):
 # Comando /help
 @app.on_message(filters.command("help") & (filters.private | filters.group))
 async def help_command(client, message: Message):
+    print("Comando /help recibido")  # Log
     try:
-        print("Comando /help recibido")  # Log
         help_text = (
             "📖 *Comandos del Caballero HηTercios:*\\n\\n"
             "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)\\n"
@@ -137,8 +137,8 @@ async def help_command(client, message: Message):
 # Comando /silenciados
 @app.on_message(filters.command("silenciados") & filters.group)
 async def list_silenced_topics(client, message: Message):
+    print("Comando /silenciados recibido")  # Log
     try:
-        print("Comando /silenciados recibido")  # Log
         if not silenced_topics:
             await message.reply("📭 No hay subtemas silenciados actualmente.")
             return
