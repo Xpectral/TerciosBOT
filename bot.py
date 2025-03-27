@@ -50,6 +50,7 @@ def is_admin(user_id, chat_member):
 
 # Notificar al admin al arrancar
 async def notify_admin_on_start():
+    print("Bot arrancado. Notificando al admin...")
     if ADMIN_USER_ID:
         try:
             await app.start()
@@ -64,6 +65,11 @@ async def notify_admin_error(context: str, error: Exception):
             await app.send_message(ADMIN_USER_ID, f"❌ Error en {context}:\n{str(error)}")
         except Exception as e:
             print(f"[ERROR] No se pudo enviar el mensaje al admin: {e}")
+
+# Verificar que el bot esté escuchando en privado
+@app.on_message(filters.private)
+async def log_private_messages(client, message: Message):
+    print(f"Mensaje recibido en privado de {message.from_user.id}")  # Log adicional para verificar la recepción de mensajes
 
 # Comando /status
 @app.on_message(filters.command("status") & filters.private)
@@ -99,28 +105,6 @@ async def help_command(client, message: Message):
     except Exception as e:
         print(f"[ERROR] Error en /help: {e}")  # Log de error
         await notify_admin_error("/help", e)
-
-# Comando /silenciados
-@app.on_message(filters.command("silenciados") & filters.private)
-async def silenciados_command(client, message: Message):
-    print(f"Comando /silenciados recibido en privado de {message.from_user.id}")  # Log adicional
-    try:
-        if not silenced_topics:
-            await message.reply("📭 No hay subtemas silenciados actualmente.")
-            return
-
-        lines = ["🔇 Subtemas silenciados:"]
-        for tid in silenced_topics:
-            try:
-                topic_info = await client.get_forum_topic(message.chat.id, tid)
-                lines.append(f"- {topic_info.name} (ID: `{tid}`)")
-            except:
-                lines.append(f"- ID del subtema: `{tid}` (nombre no disponible)")
-
-        await message.reply("\n".join(lines))
-    except Exception as e:
-        print(f"[ERROR] Error en /silenciados: {e}")  # Log de error
-        await notify_admin_error("/silenciados", e)
 
 # Arranque seguro con notificación
 async def main():
