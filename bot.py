@@ -62,13 +62,13 @@ async def notify_admin_error(context: str, error: Exception):
     if ADMIN_USER_ID:
         try:
             await app.send_message(ADMIN_USER_ID, f"❌ Error en {context}:\n{str(error)}")
-        except:
-            pass
+        except Exception as e:
+            print(f"[ERROR] No se pudo enviar el mensaje al admin: {e}")
 
 # Comando /silenciar
 @app.on_message(filters.command("silenciar") & filters.group)
 async def set_silenced_topics(client, message: Message):
-    print("Comando /silenciar recibido en el grupo")  # Log
+    print("Comando /silenciar recibido")  # Log
     try:
         if not message.from_user:
             return
