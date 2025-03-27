@@ -84,6 +84,7 @@ async def status_command(client, message: Message):
             "🧪 Versión: `1.0.0`\n"
             "🌌 Cosmos activo y fluyendo 🛡️"
         )
+        print(f"Respuesta enviada para /status en privado de {message.from_user.id}")  # Log adicional
         await message.reply(info, parse_mode="markdown")
     except Exception as e:
         print(f"[ERROR] Error en /status: {e}")  # Log de error
@@ -101,6 +102,7 @@ async def help_command(client, message: Message):
             "🔹 `/status` — Muestra el estado del cosmos y del bot\\n"
             "🔹 `/help` — Muestra esta ayuda celestial"
         )
+        print(f"Respuesta enviada para /help en privado de {message.from_user.id}")  # Log adicional
         await message.reply(help_text, parse_mode="markdown")
     except Exception as e:
         print(f"[ERROR] Error en /help: {e}")  # Log de error
