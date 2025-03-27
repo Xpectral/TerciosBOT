@@ -190,11 +190,11 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        main()  # Cambié asyncio.run() por la llamada directa a main()
+        asyncio.run(main())  # Usamos asyncio.run() para manejar el ciclo de eventos
     except Exception as e:
         print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
         if ADMIN_USER_ID:
             try:
-                app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:\n{e}")
+                asyncio.run(app.send_message(ADMIN_USER_ID, f"❌ El bot de HηTercios ha fallado al iniciar:\n{e}"))
             except:
                 pass
