@@ -7,7 +7,7 @@ import os
 # Configura tus credenciales desde variables de entorno
 API_ID = int(os.environ["API_ID"])
 API_HASH = os.environ["API_HASH"]
-BOT_TOKEN = os.environ["BOT_TOKEN"]"1234567890:ABCDefghIJKLMNOP-YourBotTokenHere"  # Sustituye por tu token
+BOT_TOKEN = os.environ["BOT_TOKEN"] # Sustituye por tu token
 
 # Ruta del archivo de persistencia
 PERSISTENCE_FILE = "silenced_topics.json"
