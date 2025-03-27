@@ -135,6 +135,30 @@ async def list_silenced(client, message):
         
         topics_list = "\n".join([f"- Subtema ID: `{topic}`" for topic in silenced_topics])
         await message.reply(f"📂 *Subtemas silenciados:*\n{topics_list}", parse_mode=enums.ParseMode.MARKDOWN)
-    except Exception as e:
-        print(f"[ERROR] Error en /silenciados: {e}")
 
+# Monitoreo de mensajes en subtemas silenciados
+@app.on_message(filters.group & filters.text)
+async def monitor_silenced_topics(client, message):
+    try:
+        if hasattr(message, 'message_thread_id') and message.message_thread_id:
+            silenced_topics = load_silenced_topics()
+            topic_id = message.message_thread_id
+            
+            if topic_id in silenced_topics:
+                user_id = message.from_user.id
+                chat_member = await app.get_chat_member(message.chat.id, user_id)
+                
+                if chat_member.status not in ["administrator", "creator"]:
+                    await message.delete()
+                    if topic_id not in warning_messages:
+                        warning_messages[topic_id] = time.time()
+                        await message.reply("⚠️ Este subtema está en modo solo lectura.")
+                    else:
+                        if time.time() - warning_messages[topic_id] > 60:  # Mensaje de advertencia cada minuto
+                            warning_messages[topic_id] = time.time()
+                            await message.reply("⚠️ Este subtema está en modo solo lectura.")
+    except Exception as e:
+        print(f"[ERROR] Error en monitor_silenced_topics: {e}")
+
+if __name__ == "__main__":
+    app.run()
