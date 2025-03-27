@@ -36,15 +36,12 @@ except Exception as e:
     with open(PERSISTENCE_FILE, "w") as f:
         json.dump([], f)
 
-# Diccionario para evitar spam del mensaje de advertencia
-warning_messages = {}
-
 # Función para guardar los temas silenciados
 def save_silenced_topics():
     with open(PERSISTENCE_FILE, "w") as f:
         json.dump(list(silenced_topics), f)
 
-# Verifica si un usuario es administrador
+# Función para verificar si un usuario es admin
 def is_admin(user_id, chat_member):
     return chat_member.status in ("administrator", "creator")
 
@@ -58,7 +55,7 @@ async def notify_admin_on_start():
         except Exception as e:
             print(f"[ERROR] No se pudo notificar al admin: {e}")
 
-# Función para notificar errores en ejecución
+# Función para notificar errores
 async def notify_admin_error(context: str, error: Exception):
     if ADMIN_USER_ID:
         try:
@@ -66,10 +63,12 @@ async def notify_admin_error(context: str, error: Exception):
         except Exception as e:
             print(f"[ERROR] No se pudo enviar el mensaje al admin: {e}")
 
-# Verificar que el bot esté escuchando en privado
+# Verificación de comandos privados
 @app.on_message(filters.private)
 async def log_private_messages(client, message: Message):
-    print(f"Mensaje recibido en privado de {message.from_user.id} con contenido: {message.text}")  # Log adicional para verificar la recepción de mensajes
+    print(f"Mensaje privado recibido: {message.text}")  # Log adicional para verificar la recepción de mensajes
+    if message.text.startswith("/"):
+        print(f"Comando privado recibido: {message.text}")  # Log para los comandos privados
 
 # Comando /status
 @app.on_message(filters.command("status") & filters.private)
@@ -84,7 +83,6 @@ async def status_command(client, message: Message):
             "🧪 Versión: `1.0.0`\n"
             "🌌 Cosmos activo y fluyendo 🛡️"
         )
-        print(f"Respuesta enviada para /status en privado de {message.from_user.id}")  # Log adicional
         await message.reply(info, parse_mode="markdown")
     except Exception as e:
         print(f"[ERROR] Error en /status: {e}")  # Log de error
@@ -102,7 +100,6 @@ async def help_command(client, message: Message):
             "🔹 `/status` — Muestra el estado del cosmos y del bot\\n"
             "🔹 `/help` — Muestra esta ayuda celestial"
         )
-        print(f"Respuesta enviada para /help en privado de {message.from_user.id}")  # Log adicional
         await message.reply(help_text, parse_mode="markdown")
     except Exception as e:
         print(f"[ERROR] Error en /help: {e}")  # Log de error
