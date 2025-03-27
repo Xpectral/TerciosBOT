@@ -50,7 +50,7 @@ def is_admin(user_id, chat_member):
 
 # Notificar al admin al arrancar
 async def notify_admin_on_start():
-    print("Bot arrancado. Notificando al admin...")
+    print("Bot arrancado. Notificando al admin...")  # Log adicional
     if ADMIN_USER_ID:
         try:
             await app.start()
