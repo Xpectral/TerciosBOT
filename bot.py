@@ -67,7 +67,6 @@ async def notify_admin_error(context: str, error: Exception):
 # Comando /start
 @app.on_message(filters.command("start") & filters.private)
 async def start(client, message: Message):
-    print(f"Comando /start recibido de {message.from_user.id}")  # Log para ver si se recibe el comando
     try:
         await message.reply("¡Hola! Soy tu bot de HηTercios. ¿En qué puedo ayudarte? 🌟")
     except Exception as e:
@@ -199,7 +198,7 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        app.run()  # Inicia el bot
     except Exception as e:
         print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
         if ADMIN_USER_ID:
