@@ -108,9 +108,16 @@ async def status_command(client, message: Message):
     try:
         from datetime import datetime
         info = (
-            "✨ *Estado del bot HηTercios* ✨
+    "✨ *Estado del bot HηTercios* ✨
 "
-            f"📂 Subtemas silenciados: `{len(silenced_topics)}`
+    f"📂 Subtemas silenciados: `{len(silenced_topics)}`
+"
+    f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`
+"
+    "🧪 Versión: `1.0.0`
+"
+    "🌌 Cosmos activo y fluyendo 🛡️"
+)}`
 "
             f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`
 "
@@ -127,10 +134,17 @@ async def status_command(client, message: Message):
 async def help_command(client, message: Message):
     try:
         help_text = (
-            "📖 *Comandos del Caballero HηTercios:*
+    "📖 *Comandos del Caballero HηTercios:*
 
 "
-            "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)
+    "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)
+"
+    "🔹 `/silenciados` — Lista los subtemas actualmente silenciados
+"
+    "🔹 `/status` — Muestra el estado del cosmos y del bot
+"
+    "🔹 `/help` — Muestra esta ayuda celestial"
+)
 "
             "🔹 `/silenciados` — Lista los subtemas actualmente silenciados
 "
