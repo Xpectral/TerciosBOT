@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pyrogram import Client, filters, enums
+from pyrogram.types import ChatPermissions
 
 # Configuración desde variables de entorno
 API_ID = int(os.environ["API_ID"])
@@ -109,10 +110,22 @@ async def toggle_silence(client, message):
         if topic_id in silenced_topics:
             silenced_topics.remove(topic_id)
             save_silenced_topics(silenced_topics)
+            # Restaurar permisos para todos los usuarios
+            await app.set_chat_permissions(
+                chat_id=message.chat.id,
+                permissions=ChatPermissions(can_send_messages=True),
+                message_thread_id=topic_id,
+            )
             await message.reply("✅ Este subtema ya no está silenciado. Todos pueden escribir.")
         else:
             silenced_topics.add(topic_id)
             save_silenced_topics(silenced_topics)
+            # Restringir permisos para usuarios no administradores
+            await app.set_chat_permissions(
+                chat_id=message.chat.id,
+                permissions=ChatPermissions(can_send_messages=False),
+                message_thread_id=topic_id,
+            )
             await message.reply("🔇 Este subtema ha sido silenciado. Solo administradores pueden escribir.")
     except Exception as e:
         print(f"[ERROR] Error en /silenciar: {e}")
@@ -133,39 +146,6 @@ async def list_silenced(client, message):
     except Exception as e:
         print(f"[ERROR] Error en /silenciados: {e}")
         await notify_admin(f"❌ Error en /silenciados:\n{str(e)}")
-
-# Autoeliminación de mensajes en temas silenciados
-@app.on_message(filters.channel & ~filters.command(["start", "status", "help", "silenciar", "silenciados"]))
-async def auto_delete(client, message):
-    try:
-        if not hasattr(message, 'message_thread_id') or not message.message_thread_id or message.message_thread_id not in load_silenced_topics():
-            return
-        
-        chat_member = await app.get_chat_member(message.chat.id, message.from_user.id)
-        
-        if chat_member.status in ["administrator", "creator"]:
-            return
-        
-        await message.delete()
-        
-        topic_id = message.message_thread_id
-        now = datetime.now(timezone.utc).timestamp()
-        
-        if topic_id not in warning_messages or now - warning_messages.get(topic_id, 0) > 10:
-            warning_messages[topic_id] = now
-            warning = await client.send_message(
-                chat_id=message.chat.id,
-                text="⚠️ **Canal solo lectura**\nSolo los administradores pueden escribir aquí",
-                message_thread_id=topic_id,
-                parse_mode=enums.ParseMode.MARKDOWN
-            )
-            await asyncio.sleep(10)
-            try:
-                await warning.delete()
-            except Exception as e:
-                print(f"[ERROR] Error al eliminar advertencia: {e}")
-    except Exception as e:
-        print(f"[ERROR] Error en auto_delete: {e}")
 
 # Ejecución del bot
 if __name__ == "__main__":
