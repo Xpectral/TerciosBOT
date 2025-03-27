@@ -132,7 +132,7 @@ async def list_silenced(client, message):
         await notify_admin(f"❌ Error en /silenciados:\n{str(e)}")
 
 # Autoeliminación de mensajes en temas silenciados
-@app.on_message(filters.group & ~filters.command())
+@app.on_message(filters.group & ~filters.text)
 async def auto_delete(client, message):
     try:
         if not hasattr(message, 'message_thread_id') or not message.message_thread_id or message.message_thread_id not in load_silenced_topics():
