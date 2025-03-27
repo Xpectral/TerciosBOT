@@ -195,7 +195,7 @@ async def auto_delete(client, message: Message):
 # Arranque seguro con notificación
 async def main():
     await notify_admin_on_start()
-    await idle()
+    await app.run()
 
 if __name__ == "__main__":
     try:
