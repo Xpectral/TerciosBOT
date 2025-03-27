@@ -112,8 +112,7 @@ async def status_command(client, message: Message):
 "
             "🌌 Cosmos activo y fluyendo 🛡️"
         )
-        await message.reply(info, parse_mode="markdown")"
-".join(info), parse_mode="markdown")
+        await message.reply(info, parse_mode="markdown")
     except Exception as e:
         await notify_admin_error("/status", e)
 
