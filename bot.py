@@ -52,6 +52,12 @@ def is_admin(user_id, chat_member):
 async def notify_admin_on_start():
     if ADMIN_USER_ID:
         try:
+            await app.start()
+            await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
+        except Exception as e:
+            print(f"[ERROR] No se pudo notificar al admin: {e}")
+    if ADMIN_USER_ID:
+        try:
             await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
         except Exception as e:
             print(f"[ERROR] No se pudo notificar al admin: {e}")
@@ -102,32 +108,39 @@ async def status_command(client, message: Message):
     try:
         from datetime import datetime
         info = (
-            "✨ *Estado del bot HηTercios* ✨\n"
-            f"📂 Subtemas silenciados: `{len(silenced_topics)}`\n"
-            f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`\n"
-            "🧪 Versión: `1.0.0`\n"
+            "✨ *Estado del bot HηTercios* ✨
+"
+            f"📂 Subtemas silenciados: `{len(silenced_topics)}`
+"
+            f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`
+"
+            "🧪 Versión: `1.0.0`
+"
             "🌌 Cosmos activo y fluyendo 🛡️"
         )
         await message.reply(info, parse_mode="markdown")
     except Exception as e:
         await notify_admin_error("/status", e)
 
-
 # Comando /help
 @app.on_message(filters.command("help") & (filters.private | filters.group))
 async def help_command(client, message: Message):
     try:
         help_text = (
-            "📖 *Comandos del Caballero HηTercios:*\n\n"
-            "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)\n"
-            "🔹 `/silenciados` — Lista los subtemas actualmente silenciados\n"
-            "🔹 `/status` — Muestra el estado del cosmos y del bot\n"
+            "📖 *Comandos del Caballero HηTercios:*
+
+"
+            "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)
+"
+            "🔹 `/silenciados` — Lista los subtemas actualmente silenciados
+"
+            "🔹 `/status` — Muestra el estado del cosmos y del bot
+"
             "🔹 `/help` — Muestra esta ayuda celestial"
         )
         await message.reply(help_text, parse_mode="markdown")
     except Exception as e:
         await notify_admin_error("/help", e)
-
 
 # Comando /silenciados
 @app.on_message(filters.command("silenciados") & filters.group)
@@ -187,7 +200,6 @@ async def auto_delete(client, message: Message):
 # Arranque seguro con notificación
 async def main():
     await notify_admin_on_start()
-    await app.start()
     await idle()
 
 if __name__ == "__main__":
