@@ -180,7 +180,7 @@ async def main():
         print("Bot arrancado. Notificando al admin...")
         if ADMIN_USER_ID:
             await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
-        await app.idle()
+        await app.run()
     except Exception as e:
         print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
         if ADMIN_USER_ID:
