@@ -2,8 +2,8 @@ import json
 import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram import idle
 import os
+from datetime import datetime
 
 # Configura tus credenciales desde variables de entorno
 API_ID = int(os.environ["API_ID"])
@@ -101,7 +101,6 @@ async def set_silenced_topics(client, message: Message):
 @app.on_message(filters.command("status") & (filters.private | filters.group))
 async def status_command(client, message: Message):
     try:
-        from datetime import datetime
         info = (
             "✨ *Estado del bot HηTercios* ✨\n"
             f"📂 Subtemas silenciados: `{len(silenced_topics)}`\n"
@@ -186,7 +185,7 @@ async def auto_delete(client, message: Message):
 # Arranque seguro con notificación
 async def main():
     await notify_admin_on_start()
-    await app.idle()  # Cambié idle() por app.idle()
+    await app.run()  # Usamos app.run() en vez de idle()
 
 if __name__ == "__main__":
     try:
