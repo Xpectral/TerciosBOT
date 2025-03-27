@@ -65,44 +65,10 @@ async def notify_admin_error(context: str, error: Exception):
         except Exception as e:
             print(f"[ERROR] No se pudo enviar el mensaje al admin: {e}")
 
-# Comando /silenciar
-@app.on_message(filters.command("silenciar") & filters.group)
-async def set_silenced_topics(client, message: Message):
-    print(f"Comando /silenciar recibido en {message.chat.id} por {message.from_user.id}")  # Log adicional
-    try:
-        if not message.from_user:
-            return
-
-        user_id = message.from_user.id
-        chat_id = message.chat.id
-        chat_member = await app.get_chat_member(chat_id, user_id)
-
-        if not is_admin(user_id, chat_member):
-            await message.reply("Solo los administradores pueden usar este comando.")
-            return
-
-        topic_id = message.message_thread_id
-
-        if not topic_id:
-            await message.reply("Este comando debe ejecutarse dentro del subtema que quieres silenciar.")
-            return
-
-        if topic_id in silenced_topics:
-            silenced_topics.remove(topic_id)
-            save_silenced_topics()
-            await message.reply("✅ Este subtema ya no está silenciado. Todos pueden escribir.\n🌟 El cosmos fluye libremente.")
-        else:
-            silenced_topics.add(topic_id)
-            save_silenced_topics()
-            await message.reply("🔇 Este subtema ha sido silenciado. Solo administradores pueden escribir.\n🛡️ Protegido por los Caballeros del Silencio.")
-    except Exception as e:
-        print(f"[ERROR] Error en /silenciar: {e}")  # Log de error
-        await notify_admin_error("/silenciar", e)
-
 # Comando /status
-@app.on_message(filters.command("status") & (filters.private | filters.group))
+@app.on_message(filters.command("status") & filters.private)
 async def status_command(client, message: Message):
-    print(f"Comando /status recibido en {message.chat.id} por {message.from_user.id}")  # Log adicional
+    print(f"Comando /status recibido en privado de {message.from_user.id}")  # Log adicional
     try:
         from datetime import datetime
         info = (
@@ -118,9 +84,9 @@ async def status_command(client, message: Message):
         await notify_admin_error("/status", e)
 
 # Comando /help
-@app.on_message(filters.command("help") & (filters.private | filters.group))
+@app.on_message(filters.command("help") & filters.private)
 async def help_command(client, message: Message):
-    print(f"Comando /help recibido en {message.chat.id} por {message.from_user.id}")  # Log adicional
+    print(f"Comando /help recibido en privado de {message.from_user.id}")  # Log adicional
     try:
         help_text = (
             "📖 *Comandos del Caballero HηTercios:*\\n\\n"
@@ -135,9 +101,9 @@ async def help_command(client, message: Message):
         await notify_admin_error("/help", e)
 
 # Comando /silenciados
-@app.on_message(filters.command("silenciados") & filters.group)
-async def list_silenced_topics(client, message: Message):
-    print(f"Comando /silenciados recibido en {message.chat.id} por {message.from_user.id}")  # Log adicional
+@app.on_message(filters.command("silenciados") & filters.private)
+async def silenciados_command(client, message: Message):
+    print(f"Comando /silenciados recibido en privado de {message.from_user.id}")  # Log adicional
     try:
         if not silenced_topics:
             await message.reply("📭 No hay subtemas silenciados actualmente.")
@@ -155,42 +121,6 @@ async def list_silenced_topics(client, message: Message):
     except Exception as e:
         print(f"[ERROR] Error en /silenciados: {e}")  # Log de error
         await notify_admin_error("/silenciados", e)
-
-# Autoeliminación en subtemas silenciados
-@app.on_message(filters.group & filters.text)
-async def auto_delete(client, message: Message):
-    try:
-        if not message.message_thread_id:
-            return
-
-        if message.message_thread_id not in silenced_topics:
-            return
-
-        chat_id = message.chat.id
-        user_id = message.from_user.id
-        chat_member = await app.get_chat_member(chat_id, user_id)
-
-        if is_admin(user_id, chat_member):
-            return
-
-        await message.delete()
-
-        topic_id = message.message_thread_id
-        last_warning = warning_messages.get(topic_id, 0)
-        now = asyncio.get_event_loop().time()
-
-        if now - last_warning > 10:
-            warning_messages[topic_id] = now
-            msg = await client.send_message(
-                chat_id,
-                "⚠️ Canal solo lectura",
-                message_thread_id=topic_id
-            )
-            await asyncio.sleep(10)
-            await msg.delete()
-    except Exception as e:
-        print(f"[ERROR] Error en auto_delete: {e}")  # Log de error
-        await notify_admin_error("auto_delete", e)
 
 # Arranque seguro con notificación
 async def main():
