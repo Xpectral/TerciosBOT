@@ -69,7 +69,7 @@ async def notify_admin_error(context: str, error: Exception):
 # Verificar que el bot esté escuchando en privado
 @app.on_message(filters.private)
 async def log_private_messages(client, message: Message):
-    print(f"Mensaje recibido en privado de {message.from_user.id}")  # Log adicional para verificar la recepción de mensajes
+    print(f"Mensaje recibido en privado de {message.from_user.id} con contenido: {message.text}")  # Log adicional para verificar la recepción de mensajes
 
 # Comando /status
 @app.on_message(filters.command("status") & filters.private)
