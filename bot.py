@@ -108,12 +108,9 @@ async def status_command(client, message: Message):
     try:
         from datetime import datetime
         info = (
-    "✨ *Estado del bot HηTercios* ✨\n"
-    f"📂 Subtemas silenciados: `{len(silenced_topics)}`\n"
-    f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`\n"
-    "🧪 Versión: `1.0.0`\n"
-    "🌌 Cosmos activo y fluyendo 🛡️"
-)}`
+            "✨ *Estado del bot HηTercios* ✨
+"
+            f"📂 Subtemas silenciados: `{len(silenced_topics)}`
 "
             f"🕒 Última actividad: `{datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC`
 "
@@ -124,18 +121,18 @@ async def status_command(client, message: Message):
         await message.reply(info, parse_mode="markdown")
     except Exception as e:
         await notify_admin_error("/status", e)
+    except Exception as e:
+        await notify_admin_error("/status", e)
 
 # Comando /help
 @app.on_message(filters.command("help") & (filters.private | filters.group))
 async def help_command(client, message: Message):
     try:
         help_text = (
-    "📖 *Comandos del Caballero HηTercios:*\n\n"
-    "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)\n"
-    "🔹 `/silenciados` — Lista los subtemas actualmente silenciados\n"
-    "🔹 `/status` — Muestra el estado del cosmos y del bot\n"
-    "🔹 `/help` — Muestra esta ayuda celestial"
-)
+            "📖 *Comandos del Caballero HηTercios:*
+
+"
+            "🔹 `/silenciar` — Silencia el subtema actual (grupo tipo foro, solo admins)
 "
             "🔹 `/silenciados` — Lista los subtemas actualmente silenciados
 "
@@ -144,6 +141,8 @@ async def help_command(client, message: Message):
             "🔹 `/help` — Muestra esta ayuda celestial"
         )
         await message.reply(help_text, parse_mode="markdown")
+    except Exception as e:
+        await notify_admin_error("/help", e)
     except Exception as e:
         await notify_admin_error("/help", e)
 
