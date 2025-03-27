@@ -1,8 +1,7 @@
 import json
-import asyncio
-from pyrogram import Client, filters
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 import os
+from pyrogram import Client, filters
+from pyrogram.types import Message
 from datetime import datetime
 
 # Configura tus credenciales desde variables de entorno
@@ -52,7 +51,6 @@ def is_admin(user_id, chat_member):
 async def notify_admin_on_start():
     if ADMIN_USER_ID:
         try:
-            await app.start()
             await app.send_message(ADMIN_USER_ID, "✅ El bot de HηTercios ha arrancado correctamente.")
         except Exception as e:
             print(f"[ERROR] No se pudo notificar al admin: {e}")
@@ -189,7 +187,7 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.run(main())  # Usamos asyncio.run() para manejar el ciclo de eventos
+        main()  # Ejecutamos directamente el main()
     except Exception as e:
         print(f"[ERROR] Fallo crítico al arrancar el bot: {e}")
         if ADMIN_USER_ID:
