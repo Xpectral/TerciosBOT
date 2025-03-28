@@ -1,194 +1,140 @@
 import json
-import logging
 import os
 from datetime import datetime, timezone
-from telegram import Update
-from telegram.constants import ParseMode
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from pyrogram import Client, filters, enums
+from pyrogram.types import ChatPermissions
 
-# Configuración de logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+# Configuración desde variables de entorno
+API_ID = int(os.environ["API_ID"])
+API_HASH = os.environ["API_HASH"]
+BOT_TOKEN = os.environ["BOT_TOKEN"]
+ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID", 0))
 
-# Variables de entorno
-ADMIN_CHAT_ID = os.getenv('ADMIN_CHAT_ID')
-BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+# Inicializa el cliente
+app = Client("hntercios_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# Archivo para persistencia de subtemas silenciados
-SILENCED_FILE = "silenced_topics.json"
+# Variables globales
+PERSISTENCE_FILE = "silenced_topics.json"
+warning_messages = {}
 
-# Última actividad del bot
-last_activity = datetime.now(timezone.utc)
-
-# Lista de subtemas silenciados
-silenced_topics = []
-
-def save_silenced_topics():
-    """Guarda los subtemas silenciados en un archivo JSON."""
-    with open(SILENCED_FILE, 'w', encoding='utf-8') as file:
-        json.dump(silenced_topics, file, ensure_ascii=False, indent=4)
-
+# Funciones auxiliares
 def load_silenced_topics():
-    """Carga los subtemas silenciados desde un archivo JSON."""
-    global silenced_topics
-    if os.path.exists(SILENCED_FILE):
-        with open(SILENCED_FILE, 'r', encoding='utf-8') as file:
-            silenced_topics = json.load(file)
-    else:
-        silenced_topics = []
+    """Carga los temas silenciados desde un archivo JSON."""
+    try:
+        if os.path.exists(PERSISTENCE_FILE):
+            with open(PERSISTENCE_FILE, "r") as f:
+                data = f.read().strip()
+                return set(json.loads(data)) if data else set()
+        return set()
+    except Exception as e:
+        print(f"[ERROR] No se pudo cargar silenced_topics.json: {e}")
+        return set()
 
-def update_last_activity():
-    """Actualiza la última actividad del bot."""
-    global last_activity
-    last_activity = datetime.now(timezone.utc)
+def save_silenced_topics(silenced_topics):
+    """Guarda los temas silenciados en un archivo JSON."""
+    try:
+        with open(PERSISTENCE_FILE, "w") as f:
+            json.dump(list(silenced_topics), f)
+    except Exception as e:
+        print(f"[ERROR] No se pudo guardar silenced_topics.json: {e}")
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Comando /start."""
-    update_last_activity()
-    await update.message.reply_text(
-        '🤖 *Bienvenido al Caballero HηTercios*\n'
-        'Guardián de los subtemas del foro.\n\n'
-        '⚙️ Usa /help para ver los comandos disponibles.\n'
-        '🌌 El cosmos está en equilibrio.',
-        parse_mode=ParseMode.MARKDOWN
+async def notify_admin(message):
+    """Envía una notificación al administrador."""
+    if ADMIN_USER_ID:
+        try:
+            await app.send_message(ADMIN_USER_ID, message)
+        except Exception as e:
+            print(f"[ERROR] No se pudo notificar al admin: {e}")
+
+# Comando /start
+@app.on_message(filters.command("start") & filters.group)
+async def start_command(client, message):
+    print("[INFO] Comando /start recibido")
+    welcome_msg = (
+        "🤖 **Bienvenido al Caballero HηTercios**\n"
+        "Guardían de los subtemas del foro\n\n"
+        "⚙️ Usa /help para ver los comandos disponibles\n"
+        "🌌 El cosmos está en equilibrio"
     )
+    await message.reply(welcome_msg, parse_mode=enums.ParseMode.MARKDOWN)
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Comando /help."""
-    update_last_activity()
-    await update.message.reply_text(
-        '*Comandos disponibles:*\n\n'
-        '/start - Inicia la conversación con el bot.\n'
-        '/status - Muestra el estado del bot.\n'
-        '/silenciar - Silencia un subtema.\n'
-        '/silenciados - Lista los subtemas silenciados.\n'
-        '/help - Muestra este mensaje de ayuda.',
-        parse_mode=ParseMode.MARKDOWN
+# Comando /help
+@app.on_message(filters.command("help") & filters.group)
+async def help_command(client, message):
+    print("[INFO] Comando /help recibido")
+    help_msg = (
+        "**Comandos disponibles:**\n\n"
+        "/start - Inicia la conversación con el bot.\n"
+        "/status - Muestra el estado del bot.\n"
+        "/silenciar - Silencia un subtema (solo dentro de temas).\n"
+        "/silenciados - Lista los subtemas silenciados.\n"
+        "/help - Muestra este mensaje de ayuda.\n"
     )
+    await message.reply(help_msg, parse_mode=enums.ParseMode.MARKDOWN)
 
-async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Comando /status."""
-    update_last_activity()
-    silenced_count = len(silenced_topics)
-    last_activity_str = last_activity.strftime('%Y-%m-%d %H:%M:%S UTC')
-    
-    await update.message.reply_text(
-        f'✨ *Estado del bot HηTercios* ✨\n'
-        f'📂 Subtemas silenciados: `{silenced_count}`\n'
-        f'🕒 Última actividad: `{last_activity_str}`\n'
-        f'🌌 Cosmos activo y fluyendo 🛡️',
-        parse_mode=ParseMode.MARKDOWN
-    )
+# Comando /status
+@app.on_message(filters.command("status") & filters.group)
+async def status_command(client, message):
+    print("[INFO] Comando /status recibido")
+    try:
+        silenced_topics = load_silenced_topics()
+        info = (
+            "✨ *Estado del bot HηTercios* ✨\n"
+            f"📂 Subtemas silenciados: `{len(silenced_topics)}`\n"
+            f"🕒 Última actividad: `{datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC`\n"
+            "🌌 Cosmos activo y fluyendo 🛡️"
+        )
+        await message.reply(info, parse_mode=enums.ParseMode.MARKDOWN)
+    except Exception as e:
+        print(f"[ERROR] Error en /status: {e}")
+        await message.reply("❌ Error al obtener el estado del bot")
 
-async def silenciar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Comando /silenciar."""
-    update_last_activity()
-    
-    if not hasattr(update.message, 'is_topic_message') or not update.message.is_topic_message:
-        await update.message.reply_text(
-            '❌ Este comando solo puede usarse dentro de un subtema.',
-            parse_mode=ParseMode.MARKDOWN
-        )
-        return
-    
-    user = update.effective_user
-    chat = update.effective_chat
-    
-    admins = await context.bot.get_chat_administrators(chat.id)
-    is_admin = user.id in [admin.user.id for admin in admins]
-    
-    if not is_admin:
-        await update.message.reply_text(
-            '❌ Solo los administradores pueden usar este comando.',
-            parse_mode=ParseMode.MARKDOWN
-        )
-        return
-    
-    topic_id = update.message.message_thread_id
-    
-    if topic_id in silenced_topics:
-        silenced_topics.remove(topic_id)
-        save_silenced_topics()
-        await update.message.reply_text(
-            '✅ Este subtema ya no está silenciado. Todos pueden escribir.',
-            parse_mode=ParseMode.MARKDOWN
-        )
-    else:
-        silenced_topics.append(topic_id)
-        save_silenced_topics()
-        await update.message.reply_text(
-            '🔇 Este subtema ha sido silenciado. Solo administradores pueden escribir.',
-            parse_mode=ParseMode.MARKDOWN
-        )
-
-async def silenciados(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Comando /silenciados."""
-    update_last_activity()
-    
-    if not silenced_topics:
-        await update.message.reply_text(
-            '📂 No hay subtemas silenciados actualmente.',
-            parse_mode=ParseMode.MARKDOWN
-        )
-        return
-    
-    response = '📂 *Subtemas silenciados:*\n'
-    for topic_id in silenced_topics:
-        response += f'- Subtema (ID: `{topic_id}`)\n'
-    
-    await update.message.reply_text(
-        response,
-        parse_mode=ParseMode.MARKDOWN
-    )
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Monitoreo de mensajes en subtemas silenciados."""
-    update_last_activity()
-    
-    if (update.message and 
-        hasattr(update.message, 'is_topic_message') and 
-        update.message.is_topic_message and 
-        hasattr(update.message, 'message_thread_id') and 
-        update.message.message_thread_id in silenced_topics):
+# Comando /silenciar
+@app.on_message(filters.command("silenciar") & filters.group)
+async def toggle_silence(client, message):
+    print("[INFO] Comando /silenciar recibido")
+    try:
+        # Verificar si el mensaje pertenece a un tema
+        if not hasattr(message, 'message_thread_id') or not message.message_thread_id:
+            await message.reply("⚠️ Este comando solo funciona en temas.")
+            return
         
-        user = update.effective_user
-        chat = update.effective_chat
+        user_id = message.from_user.id
+        chat_member = await app.get_chat_member(message.chat.id, user_id)
         
-        admins = await context.bot.get_chat_administrators(chat.id)
+        # Verificar si el usuario es administrador
+        if chat_member.status not in ["administrator", "creator"]:
+            await message.reply("⚠️ Solo administradores pueden usar este comando.")
+            return
         
-        is_admin = user.id in [admin.user.id for admin in admins]
+        # Alternar estado del tema
+        silenced_topics = load_silenced_topics()
+        topic_id = message.message_thread_id
         
-        if not is_admin:
-            await context.bot.delete_message(
-                chat_id=update.message.chat_id,
-                message_id=update.message.message_id
-            )
-            
-            await context.bot.send_message(
-                chat_id=update.message.chat_id,
-                message_thread_id=update.message.message_thread_id,
-                text='⚠️ Este subtema está en modo solo lectura.',
-                parse_mode=ParseMode.MARKDOWN
-            )
+        if topic_id in silenced_topics:
+            silenced_topics.remove(topic_id)
+            save_silenced_topics(silenced_topics)
+            await message.reply("✅ Este subtema ya no está silenciado. Todos pueden escribir.")
+        else:
+            silenced_topics.add(topic_id)
+            save_silenced_topics(silenced_topics)
+            await message.reply("🔇 Este subtema ha sido silenciado. Solo administradores pueden escribir.")
+    except Exception as e:
+        print(f"[ERROR] Error en /silenciar: {e}")
 
-def main():
-    """Inicialización del bot."""
-    load_silenced_topics()
-    
-    application = Application.builder().token(TELEGRAM_TOKEN).build()
-    
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("status", status))
-    application.add_handler(CommandHandler("silenciar", silenciar))
-    application.add_handler(CommandHandler("silenciados", silenciados))
-    
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    
-    application.run_polling()
+# Comando /silenciados
+@app.on_message(filters.command("silenciados") & filters.group)
+async def list_silenced(client, message):
+    print("[INFO] Comando /silenciados recibido")
+    try:
+        silenced_topics = load_silenced_topics()
+        
+        if not silenced_topics:
+            await message.reply("📂 No hay subtemas silenciados actualmente.")
+            return
+        
+        topics_list = "\n".join([f"- Subtema ID: `{topic}`" for topic in silenced_topics])
+        await message.reply(f"📂 *Subtemas silenciados:*\n{topics_list}", parse_mode=enums.ParseMode.MARKDOWN)
+    except Exception as e:
+        print(f"[ERROR] Error en /silenciados: {e}")
 
-if __name__ == '__main__':
-    main()
