@@ -1,3 +1,4 @@
 python-telegram-bot==20.3
+apscheduler==3.10.1
 pyrogram>=2.0.0
 tgcrypto>=1.0.4
