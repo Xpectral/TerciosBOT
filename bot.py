@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from apscheduler.schedulers.background import BackgroundScheduler
 
 # Configuración de logging
 logging.basicConfig(
@@ -15,8 +14,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Variables de entorno
-TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-ADMIN_CHAT_ID = os.getenv('ADMIN_CHAT_ID')
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')  # Token del bot (configurado en Railway)
+ADMIN_CHAT_ID = os.getenv('ADMIN_CHAT_ID')       # ID del administrador (configurado en Railway)
 
 # Archivo para persistencia de subtemas silenciados
 SILENCED_FILE = "silenced_topics.json"
@@ -26,10 +25,6 @@ last_activity = datetime.now(timezone.utc)
 
 # Lista de subtemas silenciados
 silenced_topics = []
-
-# Scheduler para tareas programadas
-scheduler = BackgroundScheduler()
-scheduler.start()
 
 def save_silenced_topics():
     """Guarda los subtemas silenciados en un archivo JSON."""
@@ -49,17 +44,6 @@ def update_last_activity():
     """Actualiza la última actividad del bot."""
     global last_activity
     last_activity = datetime.now(timezone.utc)
-
-def eliminar_mensaje_luego(chat_id, message_id):
-    """Elimina un mensaje después de un retraso."""
-    def eliminar_mensaje():
-        try:
-            context.bot.delete_message(chat_id=chat_id, message_id=message_id)
-            logger.info(f"Mensaje eliminado: chat_id={chat_id}, message_id={message_id}")
-        except Exception as e:
-            logger.error(f"Error al eliminar mensaje: {e}")
-    
-    scheduler.add_job(eliminar_mensaje, 'date', run_date=datetime.now(timezone.utc) + timezone.timedelta(minutes=10))
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Comando /start."""
@@ -183,18 +167,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 message_id=update.message.message_id
             )
             
-            mensaje_advertencia = await context.bot.send_message(
+            await context.bot.send_message(
                 chat_id=update.message.chat_id,
                 message_thread_id=update.message.message_thread_id,
                 text='⚠️ Este subtema está en modo solo lectura.',
                 parse_mode=ParseMode.MARKDOWN
             )
-            
-            eliminar_mensaje_luego(mensaje_advertencia.chat_id, mensaje_advertencia.message_id)
 
 def main():
     """Inicialización del bot."""
     
+    # Verificar que TELEGRAM_TOKEN esté definido.
     if not TELEGRAM_TOKEN:
         raise ValueError("La variable TELEGRAM_BOT_TOKEN no está definida. Configúrala en Railway.")
     
