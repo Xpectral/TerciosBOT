@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-import openai
 
 # Configuración de logging
 logging.basicConfig(
@@ -17,7 +16,6 @@ logger = logging.getLogger(__name__)
 # Variables de entorno
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')  # Token del bot (configurado en Railway)
 ADMIN_CHAT_ID = os.getenv('ADMIN_CHAT_ID')       # ID del administrador (configurado en Railway)
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')     # Clave de API de OpenAI
 
 # Archivo para persistencia de subtemas silenciados
 SILENCED_FILE = "silenced_topics.json"
@@ -67,7 +65,6 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         '/status - Muestra el estado del bot.\n'
         '/silenciar - Silencia un subtema.\n'
         '/silenciados - Lista los subtemas silenciados.\n'
-        '/pregunta - Consulta táctica al HηBot v2.0\n'
         '/help - Muestra este mensaje de ayuda.',
         parse_mode=ParseMode.MARKDOWN
     )
@@ -77,7 +74,7 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     update_last_activity()
     silenced_count = len(silenced_topics)
     last_activity_str = last_activity.strftime('%Y-%m-%d %H:%M:%S UTC')
-
+    
     await update.message.reply_text(
         f'✨ *Estado del bot HηTercios* ✨\n'
         f'📂 Subtemas silenciados: `{silenced_count}`\n'
@@ -89,29 +86,29 @@ async def status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def silenciar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Comando /silenciar."""
     update_last_activity()
-
+    
     if not hasattr(update.message, 'is_topic_message') or not update.message.is_topic_message:
         await update.message.reply_text(
             '❌ Este comando solo puede usarse dentro de un subtema.',
             parse_mode=ParseMode.MARKDOWN
         )
         return
-
+    
     user = update.effective_user
     chat = update.effective_chat
-
+    
     admins = await context.bot.get_chat_administrators(chat.id)
     is_admin = user.id in [admin.user.id for admin in admins]
-
+    
     if not is_admin:
         await update.message.reply_text(
             '❌ Solo los administradores pueden usar este comando.',
             parse_mode=ParseMode.MARKDOWN
         )
         return
-
+    
     topic_id = update.message.message_thread_id
-
+    
     if topic_id in silenced_topics:
         silenced_topics.remove(topic_id)
         save_silenced_topics()
@@ -130,18 +127,18 @@ async def silenciar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def silenciados(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Comando /silenciados."""
     update_last_activity()
-
+    
     if not silenced_topics:
         await update.message.reply_text(
             '📂 No hay subtemas silenciados actualmente.',
             parse_mode=ParseMode.MARKDOWN
         )
         return
-
+    
     response = '📂 *Subtemas silenciados:*\n'
     for topic_id in silenced_topics:
         response += f'- Subtema (ID: `{topic_id}`)\n'
-
+    
     await update.message.reply_text(
         response,
         parse_mode=ParseMode.MARKDOWN
@@ -150,26 +147,26 @@ async def silenciados(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Monitoreo de mensajes en subtemas silenciados."""
     update_last_activity()
-
+    
     if (update.message and 
         hasattr(update.message, 'is_topic_message') and 
         update.message.is_topic_message and 
         hasattr(update.message, 'message_thread_id') and 
         update.message.message_thread_id in silenced_topics):
-
+        
         user = update.effective_user
         chat = update.effective_chat
-
+        
         admins = await context.bot.get_chat_administrators(chat.id)
-
+        
         is_admin = user.id in [admin.user.id for admin in admins]
-
+        
         if not is_admin:
             await context.bot.delete_message(
                 chat_id=update.message.chat_id,
                 message_id=update.message.message_id
             )
-
+            
             await context.bot.send_message(
                 chat_id=update.message.chat_id,
                 message_thread_id=update.message.message_thread_id,
@@ -177,72 +174,25 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.MARKDOWN
             )
 
-async def pregunta_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Comando /pregunta que invoca al GPT cósmico HηBot."""
-    update_last_activity()
-
-    if not OPENAI_API_KEY:
-        await update.message.reply_text("⚠️ Falta la clave de OpenAI. No puedo abrir el portal cósmico.")
-        return
-
-    if not context.args:
-        await update.message.reply_text("❓ Usa el comando así: `/pregunta Qué equipo uso contra Poseidón?`", parse_mode=ParseMode.MARKDOWN)
-        return
-
-    user_question = " ".join(context.args)
-    openai.api_key = OPENAI_API_KEY
-
-    prompt = [
-        {
-            "role": "system",
-            "content": (
-                "Eres HηBot v2.0, IA veterana táctica del gremio HηTercios en Saint Seiya: Legend of Justice. "
-                "Hablas con humor sarcástico, como un mentor veterano del Santuario. "
-                "Solo das respuestas estrictas según las formaciones oficiales: META, Hielos y Explosivo. "
-                "Nunca inventas alineaciones ni sugieres personajes fuera de los equipos aprobados. "
-                "Proteges recursos como sangre, aryas, copias y cristales. "
-                "Responde siempre con tono épico y pedagógico, incluyendo frases como: "
-                "'¿Quieres perder o estás innovando mal?', 'Murió Kanon', 'Que Atenea te perdone si...'."
-            )
-        },
-        {"role": "user", "content": user_question}
-    ]
-
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=prompt,
-            max_tokens=900,
-            temperature=0.7,
-        )
-
-        answer = response.choices[0].message.content
-        await update.message.reply_text(answer, parse_mode=ParseMode.MARKDOWN)
-
-    except Exception as e:
-        logger.error(f"Error GPT: {e}")
-        await update.message.reply_text("💥 El cosmos colapsó al contactar con HηBot. Intenta de nuevo.")
-
 def main():
     """Inicialización del bot."""
-
+    
     # Verificar que TELEGRAM_TOKEN esté definido.
     if not TELEGRAM_TOKEN:
         raise ValueError("La variable TELEGRAM_BOT_TOKEN no está definida. Configúrala en Railway.")
-
+    
     load_silenced_topics()
-
+    
     application = Application.builder().token(TELEGRAM_TOKEN).build()
-
+    
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("status", status))
     application.add_handler(CommandHandler("silenciar", silenciar))
     application.add_handler(CommandHandler("silenciados", silenciados))
-    application.add_handler(CommandHandler("pregunta", pregunta_command))
-
+    
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
+    
     application.run_polling()
 
 if __name__ == '__main__':
